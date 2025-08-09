@@ -32,14 +32,14 @@ mongoose.connect(process.env.DB_URL)
 const passport = require("passport");
 require("./config/passport")(passport); // configure passport-jwt
 
-// // CORS setup (allow frontend to call API)
-// app.use(cors({
-//   origin: [
-//     "http://localhost:3000",           // Dev frontend
-//     "https://taskify-task.vercel.app" // Add your deployed frontend URL here
-//   ],
-//   credentials: true
-// }));
+// CORS setup (allow frontend to call API)
+app.use(cors({
+  origin: [
+    "http://localhost:3000",           // Dev frontend
+      // Add your deployed frontend URL here
+  ],
+  credentials: true
+}));
 
 // Body parsers
 app.use(express.json());
