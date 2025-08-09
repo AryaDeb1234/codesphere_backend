@@ -1,47 +1,26 @@
-const mongoose = require('mongoose');
+var mongoose=require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true
-  },
+  username: String,
+  hash: String,
+  salt: String,
+  name: String,
   email: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  phone: {
-    type: String,
-    default: ''
-  },
-  address: {
-    type: String,
-    default: ''
-  },
-  avatar: {
-    type: String, // Path to uploaded profile image
-    default: ''
-  },
-  bio: {
-    type: String,
-    default: ''
-  },
-  skills: [String], // E.g. ["React", "Node.js"]
+  type: String,
+  required: false
+},
+  phone: String,
+  address: String,
+  avatar: String,
+  bio: String,
+  skills: [String],
   links: {
     github: String,
     twitter: String,
     instagram: String,
     facebook: String
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  projects: [{ 
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Project'
-  }]
+  projects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Project' }],
+  createdAt: { type: Date, default: Date.now }
 });
-
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('user', userSchema); // lowercase 'user'

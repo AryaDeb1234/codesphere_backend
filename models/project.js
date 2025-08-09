@@ -21,11 +21,10 @@ const projectSchema = new mongoose.Schema({
     type: [String], // Array of Cloudinary image URLs
     validate: [arrayLimit, '{PATH} exceeds the limit of 5']
   },
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
+  user: { type: mongoose.Schema.Types.ObjectId, 
+    ref: "user",
+    required:true 
+  }, // Reference to User
   createdAt: {
     type: Date,
     default: Date.now
@@ -35,7 +34,11 @@ const projectSchema = new mongoose.Schema({
     type: Boolean, 
     default: false 
   },
-  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+  likes: [{ 
+  type: mongoose.Schema.Types.ObjectId, 
+  ref: "user" // same model as above
+}],
+ 
 
 });
 

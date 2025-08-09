@@ -8,8 +8,11 @@ const { uploadcloudinary } = require("../utlis/cloudinary");
 
 const fs = require("fs");
 var User = require("../models/user");
-
 var Project = require("../models/project");
+
+var passport = require("passport");
+const isAuthenticated = passport.authenticate("jwt", { session: false });
+
 
 /* ************************* FOR TESTING PURPOSE WITH EJS  ***************************************/
 router.get("/", function (req, res, next) {
@@ -58,18 +61,14 @@ router.get("/users", async (req, res) => {
   }
 });
 
-//particular user er all profile details dekhte parbo
-router.get("/user/:id", async (req, res) => {
+// Get logged-in user's profile
+router.get("/user", isAuthenticated, async (req, res) => {
   try {
-    const userId = req.params.id;
+    const userId = req.user._id; // comes from JWT payload
 
-    // Fetch user by ID, exclude sensitive fields like password if present
     const existuser = await User.findById(userId).select("-password");
-
     if (!existuser) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
     res.status(200).json({ success: true, existuser });
@@ -79,17 +78,15 @@ router.get("/user/:id", async (req, res) => {
   }
 });
 
-//particular user er baisc details + sob projects er detials pabo
-router.get("/user/:id/full", async (req, res) => {
-  // authenticate middlware hoye jayoar ekhane add kore debo tahole user authentication na thakle onno user ke dkehte parbe na
+// Get logged-in user's basic details + all projects
+router.get("/user/full", isAuthenticated, async (req, res) => {
   try {
-    const userId = req.params.id;
+    const userId = req.user._id; // from JWT
 
     const userData = await User.findById(userId).select("-password");
-    if (!userData)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+    if (!userData) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
 
     const projects = await Project.find({ user: userId });
 
@@ -105,21 +102,22 @@ router.get("/user/:id/full", async (req, res) => {
 });
 
 
-//particular project er details pabo
-router.get("/project/:id", async (req, res) => {
+router.get("/project/:id", isAuthenticated, async (req, res) => {
   try {
     const projectId = req.params.id;
 
-    // Find the project by ID and populate user info
     const project = await Project.findById(projectId).populate(
       "user",
       "name avatar"
     );
 
     if (!project) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Project not found" });
+      return res.status(404).json({ success: false, message: "Project not found" });
+    }
+
+    // Ownership check
+    if (project.user._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: "Not authorized to view this project" });
     }
 
     res.status(200).json({ success: true, project });
@@ -157,30 +155,26 @@ router.get("/suggest", async (req, res) => {
 });
 
 
-//create profile route :- profile create hobe
-router.post("/profile",upload.single("avatar"),async function (req, res, next) {
-    try {
-      const {
-        name,
-        email,
-        phone,
-        address,
-        github,
-        twitter,
-        instagram,
-        facebook,
-      } = req.body;
 
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res.status(400).json({
+
+
+
+//create profile route :- profile create hobe
+router.post("/profile",passport.authenticate("jwt", { session: false }),upload.single("avatar"),async (req, res) => {
+    try {
+      const { name, phone, address, github, twitter, instagram, facebook } = req.body;
+      const userId = req.user._id; // from JWT
+
+      // Check if this user already has a profile
+      const existingUser = await User.findById(userId);
+      if (!existingUser) {
+        return res.status(404).json({
           success: false,
-          message: "User with this email already exists",
+          message: "User not found",
         });
       }
 
-      let avatarUrl =
-        "https://static.vecteezy.com/system/resources/thumbnails/009/734/564/small_2x/default-avatar-profile-icon-of-social-media-user-vector.jpg";
+      let avatarUrl = existingUser.avatar || "https://static.vecteezy.com/system/resources/thumbnails/009/734/564/small_2x/default-avatar-profile-icon-of-social-media-user-vector.jpg";
 
       if (req.file) {
         const result = await uploadcloudinary(req.file.path);
@@ -193,17 +187,16 @@ router.post("/profile",upload.single("avatar"),async function (req, res, next) {
         }
       }
 
-      const newUser = new User({
-        name,
-        email,
-        phone,
-        address,
-        avatar: avatarUrl,
-        links: { github, twitter, instagram, facebook },
-      });
+      // Update existing user profile
+      existingUser.name = name || existingUser.name;
+      existingUser.phone = phone || existingUser.phone;
+      existingUser.address = address || existingUser.address;
+      existingUser.avatar = avatarUrl;
+      existingUser.links = { github, twitter, instagram, facebook };
 
-      await newUser.save();
-      res.status(201).json({ success: true, user: newUser });
+      await existingUser.save();
+
+      res.status(200).json({ success: true, user: existingUser });
     } catch (err) {
       console.error(err);
       res.status(500).json({ success: false, message: "Something went wrong" });
@@ -211,84 +204,104 @@ router.post("/profile",upload.single("avatar"),async function (req, res, next) {
   }
 );
 
+// Create project (JWT protected)
+router.post("/project",passport.authenticate("jwt", { session: false }),upload.array("images", 5),async (req, res) => {
+    try {
+      const { title, description, techStack, projectLink, isGlobalPost } = req.body;
 
-//new project create korar jonno
-router.post("/project", upload.array("images", 5), async (req, res) => {
-  try {
-    const { title, description, techStack, projectLink, userId, isGlobalPost } =
-      req.body;
+      // Upload images to Cloudinary
+      let imageUrls = [];
 
-    // Upload images to Cloudinary
-    let imageUrls = [];
-
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
-        const result = await uploadcloudinary(file.path);
-        if (result) {
-          imageUrls.push(result.secure_url);
-        }
-
-        if (fs.existsSync(file.path)) {
-          fs.unlinkSync(file.path);
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const result = await uploadcloudinary(file.path);
+          if (result) {
+            imageUrls.push(result.secure_url);
+          }
+          if (fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+          }
         }
       }
+
+      // Convert techStack from comma-separated string to array (if needed)
+      const techArray = techStack
+        ? techStack.split(",").map((tech) => tech.trim())
+        : [];
+
+      const newProject = new Project({
+        isGlobalPost,
+        title,
+        description,
+        techStack: techArray,
+        projectLink,
+        images: imageUrls,
+        user: req.user._id, // ✅ now comes from JWT
+      });
+
+      await newProject.save();
+
+      await User.findByIdAndUpdate(req.user._id, {
+        $push: { projects: newProject._id },
+      });
+
+      console.log("Uploaded Files:", req.files);
+      console.log("Image URLs:", imageUrls);
+
+      res.status(201).json({ success: true, project: newProject });
+    } catch (err) {
+      console.error(err);
+      res
+        .status(500)
+        .json({ success: false, message: "Failed to create project" });
     }
-
-    // Convert techStack from comma-separated string to array (if needed)
-    const techArray = techStack.split(",").map((tech) => tech.trim());
-
-    const newProject = new Project({
-      isGlobalPost,
-      title,
-      description,
-      techStack: techArray,
-      projectLink,
-      images: imageUrls,
-      user: userId, // frontend sends this or use req.user._id if logged in
-    });
-
-    await newProject.save();
-
-    await User.findByIdAndUpdate(userId, {
-      $push: { projects: newProject._id },
-    });
-
-    console.log("Uploaded Files:", req.files);
-    console.log("Image URLs:", imageUrls);
-
-    res.status(201).json({ success: true, project: newProject });
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ success: false, message: "Failed to create project" });
   }
-});
+);
+
+
+
+
+
 
 //project like korar jonno (project :id)
-router.post("/project/:id/like", async (req, res) => {
-  const userId = req.body.userId;
-  const projectId = req.params.id;
+router.post("/project/:id/like",passport.authenticate("jwt", { session: false }),async (req, res) => {
+    const userId = req.user._id; // from JWT
+    const projectId = req.params.id;
 
-  try {
-    const project = await Project.findById(projectId);
-    if (!project) return res.status(404).json({ error: "Project not found" });
+    try {
+      const project = await Project.findById(projectId);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
 
-    const index = project.likes.indexOf(userId);
+      const index = project.likes.indexOf(userId);
 
-    if (index === -1) {
-      // Not liked yet → Like
-      project.likes.push(userId);
-    } else {
-      // Already liked → Unlike
-      project.likes.splice(index, 1);
+      if (index === -1) {
+        // Not liked yet → Like
+        project.likes.push(userId);
+      } else {
+        // Already liked → Unlike
+        project.likes.splice(index, 1);
+      }
+
+      await project.save();
+      res.status(200).json({ success: true, likesCount: project.likes.length });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Server error" });
     }
-
-    await project.save();
-    res.status(200).json({ success: true, likesCount: project.likes.length });
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
   }
-});
+);
 
+
+
+/**
+ * {
+  "name": "arya_deb",
+  "phone": "1234",
+  "address":"khardah",
+  "github":"akkdsa//sada"
+
+}
+ */
 module.exports = router;
