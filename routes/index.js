@@ -49,6 +49,23 @@ router.get("/global-posts", async (req, res) => {
   }
 });
 
+// GET user by ID (protected route)
+router.get('/user/:id', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findById(userId).select('-hash -salt'); // exclude sensitive info
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({ success: true, user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 
 //sob registerd user er details dekhte parbo
 router.get("/users", async (req, res) => {
@@ -257,10 +274,6 @@ router.post("/project",passport.authenticate("jwt", { session: false }),upload.a
     }
   }
 );
-
-
-
-
 
 
 //project like korar jonno (project :id)
