@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload Project</title>
+</head>
+<body>
+  <h1>Upload a Project</h1>
+  <form action="/project" method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="userId" value="<%= userId %>">
+
+    <label>Title:</label><br>
+    <input type="text" name="title" required><br><br>
+
+    <label>Description:</label><br>
+    <textarea name="description" required></textarea><br><br>
+
+    <label>Tech Stack (comma separated):</label><br>
+    <input type="text" name="techStack" required><br><br>
+
+    <label>Project Link:</label><br>
+    <input type="url" name="projectLink"><br><br>
+
+    <div id="imageInputs">
+      <label>Project Images:</label><br>
+      <input type="file" name="images" accept="image/*"><br>
+    </div>
+
+    <button type="button" onclick="addImageField()">Add More Images</button><br><br>
+
+    <!-- ✅ Add Global Post Checkbox -->
+    <label>
+      <input type="checkbox" name="isGlobalPost" value="true">
+      Make this project public (appear in global posts)
+    </label><br><br>
+
+    <button type="submit">Upload Project</button>
+  </form>
+
+  <script>
+    let imageCount = 1;
+
+    function addImageField() {
+      if (imageCount >= 5) {
+        alert("You can only upload a maximum of 5 images.");
+        return;
+      }
+
+      const imageInputs = document.getElementById('imageInputs');
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.name = 'images';
+      input.accept = 'image/*';
+      imageInputs.appendChild(input);
+      imageInputs.appendChild(document.createElement('br'));
+      imageCount++;
+    }
+  </script>
+</body>
+</html>

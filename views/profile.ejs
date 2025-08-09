@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Create Profile</title>
+</head>
+<body>
+  <h1>Create Your Profile</h1>
+
+  <form action="/profile" method="POST" enctype="multipart/form-data">
+    <label>Name:</label><br>
+    <input type="text" name="name" required><br><br>
+
+    <label>Email:</label><br>
+    <input type="email" name="email" required><br><br>
+
+    <label>Phone:</label><br>
+    <input type="text" name="phone"><br><br>
+
+    <label>Address:</label><br>
+    <input type="text" name="address"><br><br>
+
+    <label>Profile Image:</label><br>
+    <input type="file" name="avatar" accept="image/*"><br><br>
+
+    <h3>Social Links</h3>
+
+    <label>GitHub:</label><br>
+    <input type="url" name="github"><br><br>
+
+    <label>Twitter:</label><br>
+    <input type="url" name="twitter"><br><br>
+
+    <label>Instagram:</label><br>
+    <input type="url" name="instagram"><br><br>
+
+    <label>Facebook:</label><br>
+    <input type="url" name="facebook"><br><br>
+
+    <button type="submit">Submit Profile</button>
+  </form>
+</body>
+</html>
