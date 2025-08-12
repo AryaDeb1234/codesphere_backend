@@ -179,7 +179,7 @@ router.get("/suggest", async (req, res) => {
 //create profile route :- profile create hobe
 router.post("/profile",passport.authenticate("jwt", { session: false }),upload.single("avatar"),async (req, res) => {
     try {
-      const { name, phone, address, github, twitter, instagram, facebook } = req.body;
+      const { name, phone, address, github, bio,twitter, instagram, facebook } = req.body;
       const userId = req.user._id; // from JWT
 
       // Check if this user already has a profile
@@ -210,6 +210,7 @@ router.post("/profile",passport.authenticate("jwt", { session: false }),upload.s
       existingUser.address = address || existingUser.address;
       existingUser.avatar = avatarUrl;
       existingUser.links = { github, twitter, instagram, facebook };
+      existingUser.bio=bio || existingUser.bio;
 
       await existingUser.save();
 
