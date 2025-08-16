@@ -177,12 +177,15 @@ router.get("/suggest", async (req, res) => {
 
 
 //create profile route :- profile create hobe
-router.post("/profile",passport.authenticate("jwt", { session: false }),upload.single("avatar"),async (req, res) => {
+router.post(
+  "/profile",
+  passport.authenticate("jwt", { session: false }),
+  upload.single("avatar"),
+  async (req, res) => {
     try {
-      const { name, phone, address, github, bio,twitter, instagram, facebook } = req.body;
+      const { name, phone, address, github, bio, twitter, instagram, facebook, skills } = req.body;
       const userId = req.user._id; // from JWT
 
-      // Check if this user already has a profile
       const existingUser = await User.findById(userId);
       if (!existingUser) {
         return res.status(404).json({
@@ -191,7 +194,9 @@ router.post("/profile",passport.authenticate("jwt", { session: false }),upload.s
         });
       }
 
-      let avatarUrl = existingUser.avatar || "https://static.vecteezy.com/system/resources/thumbnails/009/734/564/small_2x/default-avatar-profile-icon-of-social-media-user-vector.jpg";
+      let avatarUrl =
+        existingUser.avatar ||
+        "https://static.vecteezy.com/system/resources/thumbnails/009/734/564/small_2x/default-avatar-profile-icon-of-social-media-user-vector.jpg";
 
       if (req.file) {
         const result = await uploadcloudinary(req.file.path);
@@ -204,13 +209,23 @@ router.post("/profile",passport.authenticate("jwt", { session: false }),upload.s
         }
       }
 
-      // Update existing user profile
+      // Update profile fields
       existingUser.name = name || existingUser.name;
       existingUser.phone = phone || existingUser.phone;
       existingUser.address = address || existingUser.address;
       existingUser.avatar = avatarUrl;
       existingUser.links = { github, twitter, instagram, facebook };
-      existingUser.bio=bio || existingUser.bio;
+      existingUser.bio = bio || existingUser.bio;
+
+      if (skills) {
+        // If frontend sends a JSON array -> e.g., ["C++","Node.js","React"]
+        if (Array.isArray(skills)) {
+          existingUser.skills = skills;
+        } else {
+          // If frontend sends comma-separated string -> "C++,Node.js,React"
+          existingUser.skills = skills.split(",").map((s) => s.trim());
+        }
+      }
 
       await existingUser.save();
 
@@ -221,6 +236,7 @@ router.post("/profile",passport.authenticate("jwt", { session: false }),upload.s
     }
   }
 );
+
 
 // Create project (JWT protected)
 router.post("/project",passport.authenticate("jwt", { session: false }),upload.array("images", 5),async (req, res) => {
