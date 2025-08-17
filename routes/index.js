@@ -296,7 +296,7 @@ router.post("/project",passport.authenticate("jwt", { session: false }),upload.a
 router.patch(
   "/project/:id",
   passport.authenticate("jwt", { session: false }),
-  upload.array("images", 5), // allow up to 5 new images
+  upload.array("images", 5),
   async (req, res) => {
     try {
       const { id } = req.params;
@@ -307,23 +307,19 @@ router.patch(
         return res.status(404).json({ success: false, message: "Project not found" });
       }
 
-      // Ownership check (only owner can update)
+      // Ownership check
       if (project.user.toString() !== req.user._id.toString()) {
         return res.status(403).json({ success: false, message: "Not authorized to update this project" });
       }
 
-      // Handle image upload if new files are provided
-      let imageUrls = project.images; // keep old images unless replaced
+      // Handle image upload
+      let imageUrls = project.images;
       if (req.files && req.files.length > 0) {
         imageUrls = [];
         for (const file of req.files) {
           const result = await uploadcloudinary(file.path);
-          if (result) {
-            imageUrls.push(result.secure_url);
-          }
-          if (fs.existsSync(file.path)) {
-            fs.unlinkSync(file.path);
-          }
+          if (result) imageUrls.push(result.secure_url);
+          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
         }
       }
 
