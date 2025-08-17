@@ -292,6 +292,68 @@ router.post("/project",passport.authenticate("jwt", { session: false }),upload.a
   }
 );
 
+// Update project (JWT protected, partial update)
+router.patch(
+  "/project/:id",
+  passport.authenticate("jwt", { session: false }),
+  upload.array("images", 5), // allow up to 5 new images
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { title, description, techStack, projectLink, isGlobalPost } = req.body;
+
+      const project = await Project.findById(id);
+      if (!project) {
+        return res.status(404).json({ success: false, message: "Project not found" });
+      }
+
+      // Ownership check (only owner can update)
+      if (project.user.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ success: false, message: "Not authorized to update this project" });
+      }
+
+      // Handle image upload if new files are provided
+      let imageUrls = project.images; // keep old images unless replaced
+      if (req.files && req.files.length > 0) {
+        imageUrls = [];
+        for (const file of req.files) {
+          const result = await uploadcloudinary(file.path);
+          if (result) {
+            imageUrls.push(result.secure_url);
+          }
+          if (fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+          }
+        }
+      }
+
+      // Convert techStack string to array if needed
+      let techArray = project.techStack;
+      if (techStack) {
+        techArray = Array.isArray(techStack)
+          ? techStack
+          : techStack.split(",").map((tech) => tech.trim());
+      }
+
+      // Apply updates only if provided
+      if (title) project.title = title;
+      if (description) project.description = description;
+      if (projectLink) project.projectLink = projectLink;
+      if (typeof isGlobalPost !== "undefined") project.isGlobalPost = isGlobalPost;
+      project.techStack = techArray;
+      project.images = imageUrls;
+
+      await project.save();
+
+      res.status(200).json({ success: true, project });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: "Failed to update project" });
+    }
+  }
+);
+
+
 
 //project like korar jonno (project :id)
 router.post("/project/:id/like",passport.authenticate("jwt", { session: false }),async (req, res) => {
