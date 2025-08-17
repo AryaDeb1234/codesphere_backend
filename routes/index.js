@@ -349,6 +349,41 @@ router.patch(
   }
 );
 
+// DELETE /api/project/:id
+router.delete(
+  "/project/:id",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const project = await Project.findById(id);
+      if (!project) {
+        return res.status(404).json({ success: false, message: "Project not found" });
+      }
+
+      // Ownership check
+      if (project.user.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ success: false, message: "Not authorized to delete this project" });
+      }
+
+      // Remove the project
+      await Project.findByIdAndDelete(id);
+
+      //  Also remove reference from User.projects array
+      await User.findByIdAndUpdate(req.user._id, {
+        $pull: { projects: id },
+      });
+
+      res.status(200).json({ success: true, message: "Project deleted successfully" });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: "Failed to delete project" });
+    }
+  }
+);
+
+
 
 
 //project like korar jonno (project :id)
