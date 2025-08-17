@@ -133,9 +133,9 @@ router.get("/project/:id", isAuthenticated, async (req, res) => {
     }
 
     // Ownership check
-    if (project.user._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: "Not authorized to view this project" });
-    }
+    // if (project.user._id.toString() !== req.user._id.toString()) {
+    //   return res.status(403).json({ success: false, message: "Not authorized to view this project" });
+    // }
 
     res.status(200).json({ success: true, project });
   } catch (error) {
