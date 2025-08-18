@@ -38,6 +38,7 @@ app.use(cors({
     "http://localhost:3000",           // Dev frontend
      "https://code-sphere-code.vercel.app/" // Add your deployed frontend URL here
   ],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
 
