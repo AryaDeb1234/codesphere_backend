@@ -36,7 +36,7 @@ require("./config/passport")(passport); // configure passport-jwt
 app.use(cors({
   origin: [
     "http://localhost:3000",           // Dev frontend
-     "https://code-sphere-code.vercel.app/" // Add your deployed frontend URL here
+     "https://code-sphere-code.vercel.app" // Add your deployed frontend URL here
   ],
   allowedHeaders: ["Content-Type", "Authorization"],//extraa line
   credentials: true
