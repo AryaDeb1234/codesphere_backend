@@ -172,8 +172,81 @@ router.get("/suggest", async (req, res) => {
 });
 
 
+// Get user profile with followers & following
+router.get("/user/:id", async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    // Find user and populate followers & following with their name/email
+    const user = await User.findById(userId)
+      .populate("followers", "name email")   // only return name & email
+      .populate("following", "name email");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      followers: user.followers,
+      following: user.following
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 
+
+//creating followers section 
+// Follow / Unfollow a user
+router.post("/:id/follow", passport.authenticate("jwt", { session: false }), async (req, res) => {
+  const myId = req.user._id;       
+  const targetId = req.params.id;  
+
+  if (myId.toString() === targetId) {
+    return res.status(400).json({ error: "You cannot follow yourself" });
+  }
+
+  try {
+    const me = await User.findById(myId);
+    const targetUser = await User.findById(targetId);
+
+    if (!targetUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Check if already following
+    const alreadyFollowing = me.following.includes(targetId);
+
+    if (alreadyFollowing) {
+      // Unfollow
+      me.following.pull(targetId);
+      targetUser.followers.pull(myId);
+    } else {
+      // Follow
+      me.following.push(targetId);
+      targetUser.followers.push(myId);
+    }
+
+    await me.save();
+    await targetUser.save();
+
+    res.json({
+      success: true,
+      following: me.following,
+      followers: targetUser.followers
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 
 //create profile route :- profile create hobe

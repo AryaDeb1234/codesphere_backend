@@ -21,6 +21,14 @@ const userSchema = new mongoose.Schema({
     facebook: String
   },
   projects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Project' }],
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  
+   followers: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "user" }
+  ],
+  following: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "user" }
+  ],
+  
 });
 module.exports = mongoose.model('user', userSchema); // lowercase 'user'
