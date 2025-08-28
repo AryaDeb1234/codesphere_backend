@@ -186,10 +186,10 @@ router.get("/user/:id", passport.authenticate("jwt", { session: false }), async 
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Check if logged-in user is following this user
-    const isFollowing = user.followers.some(
-      (follower) => follower._id.toString() === loggedInUserId.toString()
-    );
+    const isFollowing = user.followers.some((follower) => {
+      const followerId = follower._id ? follower._id.toString() : follower.toString();
+      return followerId === loggedInUserId.toString();
+    });
 
     res.json({
       _id: user._id,
@@ -197,14 +197,14 @@ router.get("/user/:id", passport.authenticate("jwt", { session: false }), async 
       email: user.email,
       followers: user.followers,
       following: user.following,
-      isFollowing 
+      isFollowing
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 
 
