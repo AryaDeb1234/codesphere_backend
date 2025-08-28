@@ -173,25 +173,31 @@ router.get("/suggest", async (req, res) => {
 
 
 // Get user profile with followers & following
-router.get("/user/:id", async (req, res) => {
+router.get("/user/:id", passport.authenticate("jwt", { session: false }), async (req, res) => {
   const userId = req.params.id;
+  const loggedInUserId = req.user._id;
 
   try {
-    // Find user and populate followers & following with their name/email
     const user = await User.findById(userId)
-      .populate("followers", "name email")   // only return name & email
+      .populate("followers", "name email")
       .populate("following", "name email");
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
+    // Check if logged-in user is following this user
+    const isFollowing = user.followers.some(
+      (follower) => follower._id.toString() === loggedInUserId.toString()
+    );
+
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
       followers: user.followers,
-      following: user.following
+      following: user.following,
+      isFollowing 
     });
 
   } catch (err) {
