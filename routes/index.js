@@ -186,24 +186,22 @@ router.get("/user/:id", passport.authenticate("jwt", { session: false }), async 
       return res.status(404).json({ error: "User not found" });
     }
 
-    const isFollowing = user.followers.some((follower) => {
-      const followerId = follower._id ? follower._id.toString() : follower.toString();
-      return followerId === loggedInUserId.toString();
-    });
+    // Determine if logged-in user follows this user
+    const isFollowing = user.followers.some(
+      (follower) => follower._id.toString() === loggedInUserId.toString()
+    );
 
     res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      followers: user.followers,
-      following: user.following,
-      isFollowing
+      ...user.toObject(),
+      isFollowing, // include in response
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 
 
