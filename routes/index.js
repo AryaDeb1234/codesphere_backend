@@ -49,22 +49,7 @@ router.get("/global-posts", async (req, res) => {
   }
 });
 
-// GET user by ID (protected route)
-// router.get('/user/:id', passport.authenticate('jwt', { session: false }), async (req, res) => {
-//   try {
-//     const userId = req.params.id;
 
-//     const user = await User.findById(userId).select('-hash -salt'); // exclude sensitive info
-//     if (!user) {
-//       return res.status(404).json({ success: false, message: 'User not found' });
-//     }
-
-//     res.status(200).json({ success: true, user });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ success: false, message: 'Server error' });
-//   }
-// });
 
 
 //sob registerd user er details dekhte parbo
@@ -171,8 +156,6 @@ router.get("/suggest", async (req, res) => {
   }
 });
 
-
-// Get user profile with followers & following
 router.get("/user/:id", passport.authenticate("jwt", { session: false }), async (req, res) => {
   const userId = req.params.id;
   const loggedInUserId = req.user._id;
@@ -207,8 +190,7 @@ router.get("/user/:id", passport.authenticate("jwt", { session: false }), async 
 
 
 
-//creating followers section 
-// Follow / Unfollow a user
+
 router.post("/:id/follow", passport.authenticate("jwt", { session: false }), async (req, res) => {
   const myId = req.user._id;       
   const targetId = req.params.id;  
@@ -254,7 +236,7 @@ router.post("/:id/follow", passport.authenticate("jwt", { session: false }), asy
 });
 
 
-//create profile route :- profile create hobe
+
 router.post(
   "/profile",
   passport.authenticate("jwt", { session: false }),
@@ -262,7 +244,7 @@ router.post(
   async (req, res) => {
     try {
       const { name, phone, address, github, bio, twitter, instagram, facebook, skills } = req.body;
-      const userId = req.user._id; // from JWT
+      const userId = req.user._id;
 
       const existingUser = await User.findById(userId);
       if (!existingUser) {

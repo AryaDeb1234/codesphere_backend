@@ -31,4 +31,4 @@ const userSchema = new mongoose.Schema({
   ],
   
 });
-module.exports = mongoose.model('user', userSchema); // lowercase 'user'
+module.exports = mongoose.model('user', userSchema); 

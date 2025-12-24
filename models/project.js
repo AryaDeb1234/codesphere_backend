@@ -18,13 +18,13 @@ const projectSchema = new mongoose.Schema({
     type: String
   },
   images: {
-    type: [String], // Array of Cloudinary image URLs
+    type: [String], 
     validate: [arrayLimit, '{PATH} exceeds the limit of 5']
   },
   user: { type: mongoose.Schema.Types.ObjectId, 
     ref: "user",
     required:true 
-  }, // Reference to User
+  }, 
   createdAt: {
     type: Date,
     default: Date.now
@@ -36,13 +36,13 @@ const projectSchema = new mongoose.Schema({
   },
   likes: [{ 
   type: mongoose.Schema.Types.ObjectId, 
-  ref: "user" // same model as above
+  ref: "user" 
 }],
  
 
 });
 
-// Limit image array length
+
 function arrayLimit(val) {
   return val.length <= 5;
 }

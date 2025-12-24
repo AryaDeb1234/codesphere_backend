@@ -13,7 +13,7 @@ const uploadoncloudinary = async (localfilepath) => {
   if (!localfilepath) return null;
 
   try {
-    // Upload to Cloudinary
+   
     const response = await cloudinary.uploader.upload(localfilepath, {
       resource_type: "auto",
     });
@@ -25,7 +25,7 @@ const uploadoncloudinary = async (localfilepath) => {
     console.error("Cloudinary upload failed:", err.message);
     return null;
   } finally {
-    // Always try to delete the temp file
+    
     if (fs.existsSync(localfilepath)) {
       fs.unlinkSync(localfilepath);
     } else {
