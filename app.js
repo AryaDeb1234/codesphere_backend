@@ -19,8 +19,6 @@ app.use((req, res, next) => {
   next();
 });
 
-
-
 mongoose.connect(process.env.DB_URL)
 .then(() => console.log("MongoDB connected"))
 .catch((err) => {
@@ -28,10 +26,8 @@ mongoose.connect(process.env.DB_URL)
   process.exit(1); 
 });
 
-
 const passport = require("passport");
 require("./config/passport")(passport); 
-
 
 app.use(cors({
   origin: [
